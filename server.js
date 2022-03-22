@@ -47,8 +47,8 @@ app.use((req, res, next) => {
         referer: req.headers['referer'],
         useragent: req.headers['user-agent']
     }
-    const stmt = db.prepare('INSERT INTO accesslog (remoteaddr, remoteuser, time, method, url,  protocol, httpversion, secure, status, referer, useragent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    const info = stmt.run(logdata.remoteaddr.toString(), logdata.remoteuser, logdata.time, logdata.method.toString(), logdata.url.toString(), logdata.protocol.toString(), logdata.httpversion.toString(), logdata.secure.toString(), logdata.status.toString(), logdata.referer, logdata.useragent.toString())
+    const smt = db.prepare('INSERT INTO accesslog (remoteaddr, remoteuser, time, method, url,  protocol, httpversion, secure, status, referer, useragent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    const info = smt.run(logdata.remoteaddr.toString(), logdata.remoteuser, logdata.time, logdata.method.toString(), logdata.url.toString(), logdata.protocol.toString(), logdata.httpversion.toString(), logdata.secure.toString(), logdata.status.toString(), logdata.referer, logdata.useragent.toString())
     next()
 })
 
@@ -136,13 +136,18 @@ app.use(function(req, res){
 //New Endpoints
 app.get('/app/log/access', (res, req) => {
     if (debug == true) {
-        try {
-            res.status(200).json(db.prepare('SELECT * FROM accesslog').all())
-        } catch {
-            console.error(e)
-        }
+        res.status(200).json(db.prepare('SELECT * FROM accesslog').all())
     }
     else {
         res.status(404).type("text/plain").send('Error not found')
+    }
+})
+
+app.get('/app/error', (res, req) => {
+    if (debug == true) {
+        throw new Error("Error")
+    }
+    else {
+        res.status(404).type("text/plain").send('404 NOT FOUND')
     }
 })
