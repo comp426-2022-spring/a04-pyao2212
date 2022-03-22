@@ -4,11 +4,46 @@ const min = require('minimist');
 const app = express();
 const args = min(process.argv.slice(2));
 args["port"];
-const port = args.port || process.env.PORT || 5000; //default port 5000
+args["debug"];
+args["log"];
+args["help"];
+const port = args.port || process.env.PORT || 5555;
+const debug = ((args.debug === 'true') && (args.debug != null))|| process.env.PORT || false;
+const logger = ((args.log === 'true') && (args.log != null))|| process.env.PORT || true;
+const help = args.help;
+//console.log(debug)
+//console.log(logger)
+if (help == true) {
+    console.log("server.js [options]")
+    console.log("  --port	Set the port number for the server to listen on. Must be an integerbetween 1 and 65535.");
+    console.log('  --debug	If set to `true`, creates endlpoints /app/log/access/ which returns a JSON access log from the database and /app/error which throws an error with the message "Error test successful." Defaults to `false`.')
+    console.log('  --log		If set to false, no log files are written. Defaults to true. Logs are always written to database.')
+    console.log('  --help	Return this message and exit.')
+    process.exit(1)
+}
 
 //Start HTTP server on the indicated port
 const server = app.listen(port, () => {
     console.log('App is running on %PORT%'.replace('%PORT%', port))
+})
+
+app.use((req, res, next) => {
+    let logdata = {
+        remoteaddr: req.ip,
+        remoteuser: req.user,
+        time: Date.now().toString(),
+        method: req.method,
+        url: req.url,
+        protocol: req.protocol,
+        httpversion: req.httpVersion,
+        secure: req.secure,
+        status: res.statusCode,
+        referer: req.headers['referer'],
+        useragent: req.headers['user-agent']
+    }
+    const stmt = db.prepare('INSERT INTO accesslog (remoteaddr, remoteuser, time, method, url,  protocol, httpversion, secure, status, referer, useragent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    const info = stmt.run(logdata.remoteaddr.toString(), logdata.remoteuser, logdata.time, logdata.method.toString(), logdata.url.toString(), logdata.protocol.toString(), logdata.httpversion.toString(), logdata.secure.toString(), logdata.status.toString(), logdata.referer, logdata.useragent.toString())
+    next()
 })
 
 //Coin flip functions
