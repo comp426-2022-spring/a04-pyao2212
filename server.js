@@ -1,12 +1,18 @@
 //Initial stuff
-const express = require("express");
-const min = require('minimist');
+const express = require('express');
 const app = express();
+const morgan = require('morgan')
+var fs = require('fs')
+const db = require("./database.js")
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+const min = require('minimist');
 const args = min(process.argv.slice(2));
-args["port"];
-args["debug"];
-args["log"];
-args["help"];
+
+args['port'];
+args['debug'];
+args['log'];
+args['help'];
 const port = args.port || process.env.PORT || 5555;
 const debug = ((args.debug === 'true') && (args.debug != null))|| process.env.PORT || false;
 const logger = ((args.log === 'true') && (args.log != null))|| process.env.PORT || true;
@@ -45,6 +51,11 @@ app.use((req, res, next) => {
     const info = stmt.run(logdata.remoteaddr.toString(), logdata.remoteuser, logdata.time, logdata.method.toString(), logdata.url.toString(), logdata.protocol.toString(), logdata.httpversion.toString(), logdata.secure.toString(), logdata.status.toString(), logdata.referer, logdata.useragent.toString())
     next()
 })
+
+const WRITESTREAM = fs.createWriteStream('access.log', { flags: 'a' })
+if (logger == true) {
+    app.use(morgan('combined', { stream: WRITESTREAM }))
+}
 
 //Coin flip functions
 function coinFlip() {
@@ -120,4 +131,18 @@ app.get('/app/flip/call/:guess(heads|tails)/', (req, res) =>{
 app.use(function(req, res){
     res.status(404).end(404 + ' ' + "Error not found");
     res.type("text/plain");
+})
+
+//New Endpoints
+app.get('/app/log/access', (res, req) => {
+    if (debug == true) {
+        try {
+            res.status(200).json(db.prepare('SELECT * FROM accesslog').all())
+        } catch {
+            console.error(e)
+        }
+    }
+    else {
+        res.status(404).type("text/plain").send('Error not found')
+    }
 })
