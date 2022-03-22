@@ -1,7 +1,7 @@
 //Initial stuff
 const express = require("express");
-const app = express();
 const min = require('minimist');
+const app = express();
 const args = min(process.argv.slice(2));
 args["port"];
 const port = args.port || process.env.PORT || 5000; //default port 5000
