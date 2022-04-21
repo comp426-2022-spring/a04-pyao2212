@@ -1,31 +1,40 @@
 //Initial stuff  
-const express = require('express');
-const app = express();
+const express = require('express')
+const app = express()
+const fs = require('fs')
 const morgan = require('morgan')
-var fs = require('fs')
 const db = require("./database.js")
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-const min = require('minimist');
+const minimist = require('minimist')
 const args = min(process.argv.slice(2));
 
 args['port'];
 args['debug'];
 args['log'];
 args['help'];
+
 const port = args.port || process.env.PORT || 5555;
-const debug = ((args.debug === 'true') && (args.debug != null))|| process.env.PORT || false;
-const logger = ((args.log === 'true') && (args.log != null))|| process.env.PORT || true;
-const help = args.help;
-//console.log(debug)
-//console.log(logger)
-if (help == true) {
-    console.log("server.js [options]")
-    console.log("  --port	Set the port number for the server to listen on. Must be an integerbetween 1 and 65535.");
-    console.log('  --debug	If set to `true`, creates endlpoints /app/log/access/ which returns a JSON access log from the database and /app/error which throws an error with the message "Error test successful." Defaults to `false`.')
-    console.log('  --log		If set to false, no log files are written. Defaults to true. Logs are always written to database.')
-    console.log('  --help	Return this message and exit.')
-    process.exit(1)
+const debug = (args.debug === 'true') && (args.debug != null)
+const logger = (args.log === 'true') && (args.log != null)
+const help = (`
+server.js [options]
+
+--port	Set the port number for the server to listen on. Must be an integer
+            between 1 and 65535.
+
+--debug	If set to true, creates endlpoints /app/log/access/ which returns
+            a JSON access log from the database and /app/error which throws 
+            an error with the message "Error test successful." Defaults to 
+            false.
+
+--log		If set to false, no log files are written. Defaults to true.
+            Logs are always written to database.
+
+--help	Return this message and exit.
+`)
+// If --help or -h, echo help text to STDOUT and exit
+if (args.help || args.h) {
+    console.log(help)
+    process.exit(0)
 }
 
 //Start HTTP server on the indicated port
@@ -37,7 +46,7 @@ app.use((req, res, next) => {
     let logdata = {
         remoteaddr: req.ip,
         remoteuser: req.user,
-        time: Date.now().toString(),
+        time: Date.now(),
         method: req.method,
         url: req.url,
         protocol: req.protocol,
@@ -47,9 +56,9 @@ app.use((req, res, next) => {
         referer: req.headers['referer'],
         useragent: req.headers['user-agent']
     }
-    const smt = db.prepare('INSERT INTO accesslog (remoteaddr, remoteuser, time, method, url,  protocol, httpversion, secure, status, referer, useragent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    const info = smt.run(logdata.remoteaddr.toString(), logdata.remoteuser, logdata.time, logdata.method.toString(), logdata.url.toString(), logdata.protocol.toString(), logdata.httpversion.toString(), logdata.secure.toString(), logdata.status.toString(), logdata.referer, logdata.useragent.toString())
-    next()
+    const stmt = db.prepare('INSERT INTO accesslog (remoteaddr, remoteuser, time, method, url, protocol, httpversion, status, referer, useragent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    const info = stmt.run(logData.remoteaddr, logData.remoteuser, logData.time, logData.method, logData.url, logData.protocol, logData.httpversion, logData.status, logData.referer, logData.useragent);
+    next();
 })
 
 const WRITESTREAM = fs.createWriteStream('access.log', { flags: 'a' })
