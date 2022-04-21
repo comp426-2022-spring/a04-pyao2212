@@ -6,7 +6,7 @@ const fs = require('fs')
 const db = require("./database.js")
 
 const args = minimist(process.argv.slice(2))
-args["help", "port", "debug", "log"]
+//args["help", "port", "debug", "log"]
 
 const help = (`
 server.js [options]
