@@ -6,7 +6,7 @@ const fs = require('fs')
 const db = require("./database.js")
 
 const args = minimist(process.argv.slice(2))
-//args["help", "port", "debug", "log"]
+args["help", "port", "debug", "log"]
 
 const help = (`
 server.js [options]
@@ -108,6 +108,9 @@ function flipACoin(call) {
 }
 
 // Endpoints
+const successStatusCode = 200;
+const successStatusMessage = "Good"
+
 if (args.debug) {
     app.get("/app/log/access", (req, res) => {
         try {
@@ -118,37 +121,30 @@ if (args.debug) {
         }
     })
     app.get("/app/error", (req, res) => {
-        throw new Error('Error Test Successful')
+        throw new Error('Error')
     })
 }
 
 app.get('/app/', (req, res) => {
-    res.status(200).end('OK')
-    res.type("text/plain")
+    res.status(successStatusCode).end(successStatusCode + ' ' + successStatusMessage );
+    res.type("text/plain");
 })
 
 app.get('/app/flip/', (req, res) => {
-    var flip = coinFlip()
-    res.status(200).json({'flip' : flip})
+    res.status(successStatusCode).json({ "flip" : coinFlip()});
 })
 
-app.get('/app/flips/:number/', (req, res) => {
-    var flips = coinFlips(req.params.number)
-    res.status(200).json({'raw': flips, 'summary': countFlips(flips)})
+app.get('/app/flips/:number([0-9]{1,3})', (req, res) =>{
+    const arrayOfFlips = coinFlips(req.params.number);
+    const counted = countFlips(arrayOfFlips)
+    res.status(successStatusCode).json({"raw": arrayOfFlips, "summary": counted});
 })
 
-app.get('/app/flip/call/tails/', (req, res) => {
-    var flip = flipACoin('tails')
-    res.status(200).json(flip)
+app.get('/app/flip/call/:guess(heads|tails)/', (req, res) =>{
+    res.status(successStatusCode).json(flipACoin(req.params.guess));
 })
 
-app.get('/app/flip/call/heads/', (req, res) => {
-    var flip = flipACoin('heads')
-    res.status(200).json(flip)
-})
-
-//default
-app.use(function(req, res) {
-    res.status(404).send("Endpoint does not exist")
-    res.type("text/plain")
+app.use(function(req, res){
+    res.status(404).end(404 + ' ' + "Error not found");
+    res.type("text/plain");
 })
