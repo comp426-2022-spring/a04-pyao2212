@@ -119,7 +119,7 @@ if (!debug) {
     app.get("/app/log/access", (req, res) => {
         try {
             const stmt = db.prepare('SELECT * FROM accesslog').all()
-            res.contentType('text/json');
+            res.contentType('application/json');
             res.status(200).json(stmt)
         } catch(e) {
             console.error(e)
@@ -134,23 +134,22 @@ if (!debug) {
 app.get('/app/', (req, res) => {
     res.contentType('text/plain');
     res.status(200).end(200 + ' ' + "Good" );
-    res.type("text/plain");
 })
 
 app.get('/app/flip/', (req, res) => {
-    res.contentType('text/json');
+    res.contentType('application/json');
     res.status(200).json({ "flip" : coinFlip()});
 })
 
 app.get('/app/flips/:number([0-9]{1,3})', (req, res) =>{
     const arrayOfFlips = coinFlips(req.params.number);
     const counted = countFlips(arrayOfFlips)
-    res.contentType('text/json');
+    res.contentType('application/json');
     res.status(200).json({"raw": arrayOfFlips, "summary": counted});
 })
 
 app.get('/app/flip/call/:guess(heads|tails)/', (req, res) =>{
-    res.contentType('text/json');
+    res.contentType('application/json');
     res.status(200).json(flipACoin(req.params.guess));
 })
 
