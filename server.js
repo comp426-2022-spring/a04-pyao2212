@@ -1,9 +1,11 @@
+// Place your server entry point code here
 const express = require('express')
 const morgan = require('morgan')
 const minimist = require('minimist')
 const app = express()
 const fs = require('fs')
-const db = require("./database.js")
+const db = require("./src/services/database.js")
+const res = require('express/lib/response')
 
 const args = minimist(process.argv.slice(2))
 args["help", "port", "debug", "log"]
@@ -27,16 +29,20 @@ if (args.help || args.h) {
 }
 
 // port default to 5555
-const port = args.port || process.env.port || 5555
+const port = args.port || process.env.PORT || 5555;
+const debug = (args.debug == "true");
+const log = (args.log != "false");
 
 app.use(express.json())
+app.use(express.static('./public'));
 app.use(express.urlencoded({ extended: true }))
 
 const server = app.listen(port, () => {
     console.log('App is running on port %PORT%'.replace('%PORT%', port))
 })
 
-if (args.log == true) {
+//Log user interaction to database
+if (log == true) {
     const WRITESTREAM = fs.createWriteStream('access.log', { flags: 'a' });
     app.use(morgan('combined', { stream: WRITESTREAM }));
 }
@@ -108,10 +114,8 @@ function flipACoin(call) {
 }
 
 // Endpoints
-const successStatusCode = 200;
-const successStatusMessage = "Good"
 
-if (args.debug) {
+if (!debug) {
     app.get("/app/log/access", (req, res) => {
         try {
             const stmt = db.prepare('SELECT * FROM accesslog').all()
@@ -126,22 +130,32 @@ if (args.debug) {
 }
 
 app.get('/app/', (req, res) => {
-    res.status(successStatusCode).end(successStatusCode + ' ' + successStatusMessage );
+    res.status(200).end(200 + ' ' + "Good" );
     res.type("text/plain");
 })
 
 app.get('/app/flip/', (req, res) => {
-    res.status(successStatusCode).json({ "flip" : coinFlip()});
+    res.status(200).json({ "flip" : coinFlip()});
 })
 
 app.get('/app/flips/:number([0-9]{1,3})', (req, res) =>{
     const arrayOfFlips = coinFlips(req.params.number);
     const counted = countFlips(arrayOfFlips)
-    res.status(successStatusCode).json({"raw": arrayOfFlips, "summary": counted});
+    res.status(200).json({"raw": arrayOfFlips, "summary": counted});
+})
+
+app.post('/app/flip/coins/', (req, res, next) => {
+    const flips = coinFlips(req.body.number)
+    const count = countFlips(flips)
+    res.status(200).json({"raw":flips,"summary":count})
 })
 
 app.get('/app/flip/call/:guess(heads|tails)/', (req, res) =>{
-    res.status(successStatusCode).json(flipACoin(req.params.guess));
+    res.status(200).json(flipACoin(req.params.guess));
+})
+
+app.post('/app/flip/call/', (req, res, next) => {
+    res.status(200).json(flipACoin(req.body.guess));
 })
 
 app.use(function(req, res){
